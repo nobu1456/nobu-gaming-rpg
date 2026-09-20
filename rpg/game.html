@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>横スクロール戦略コマンドRPG - バトルプロトタイプ v3</title>
+    <title>レトロ風ドット絵RPG - 三すくみシステム</title>
     <style>
         :root {
             --bg-color: #0b0f19;
-            --panel-bg: rgba(18, 26, 43, 0.92);
-            --panel-border: #2a3a5e;
-            --accent-blue: #00d2ff;
-            --accent-red: #ff3366;
-            --accent-gold: #ffcc00;
-            --accent-green: #10b981;
-            --text-main: #e2e8f0;
+            --panel-bg: rgba(15, 23, 42, 0.95);
+            --panel-border: #3b82f6;
+            --accent-blue: #38bdf8;
+            --accent-red: #f43f5e;
+            --accent-gold: #fbbf24;
+            --accent-green: #34d399;
+            --text-main: #f8fafc;
             --text-muted: #94a3b8;
         }
 
@@ -21,11 +21,10 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Courier New', Courier, monospace, 'Segoe UI';
             user-select: none;
             -webkit-user-select: none;
-            -webkit-touch-callout: none;
-            touch-action: manipulation; /* ダブルタップズームや長押しメニューの防止 */
+            touch-action: manipulation;
         }
 
         body {
@@ -37,7 +36,6 @@
             min-height: 100vh;
             min-height: 100dvh;
             padding: 4px;
-            box-sizing: border-box;
             overflow: hidden;
         }
 
@@ -47,17 +45,16 @@
             height: 100%;
             max-height: 100dvh;
             aspect-ratio: 16 / 9;
-            background: #080c14;
-            border: 2px solid var(--panel-border);
-            border-radius: 8px;
-            box-shadow: 0 0 30px rgba(0, 210, 255, 0.15);
+            background: #020617;
+            border: 3px solid #1e293b;
+            border-radius: 6px;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
         }
 
-        /* スマホ縦持ちなどでアスペクト比を維持しきれない場合の自動調整 */
         @media (max-aspect-ratio: 16/9) {
             #game-container {
                 width: 100%;
@@ -66,215 +63,118 @@
             }
         }
 
-        @media (max-width: 768px), (max-height: 500px) {
-            #game-container {
-                border: none;
-                border-radius: 0;
-                max-height: 100dvh;
-                height: 100dvh;
-            }
-        }
-
-        /* タイムラインエリア (ステージ名を追加) */
-        #timeline-bar {
-            height: 44px;
-            background: rgba(10, 15, 25, 0.9);
-            border-bottom: 1px solid var(--panel-border);
+        /* 上部ステージ・ターン表示バー */
+        #top-bar {
+            height: 40px;
+            background: #090d16;
+            border-bottom: 2px solid #1e293b;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            padding: 0 8px;
-            gap: 6px;
-            position: relative;
-            z-index: 20;
-            flex-shrink: 0;
-        }
-
-        .stage-title-badge {
-            background: rgba(8, 12, 20, 0.85);
-            border: 1px solid var(--accent-gold);
-            border-radius: 4px;
-            padding: 3px 6px;
-            font-size: 10px;
+            padding: 0 12px;
+            font-size: 11px;
             font-weight: bold;
             color: var(--accent-gold);
-            white-space: nowrap;
-            flex-shrink: 0;
-            box-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
+            z-index: 10;
         }
 
-        .tl-title {
-            font-size: 9px;
-            font-weight: bold;
-            color: var(--accent-blue);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            line-height: 1.2;
-            flex-shrink: 0;
-        }
-
-        .tl-list {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            flex-grow: 1;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .tl-card {
-            display: flex;
-            align-items: center;
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 4px;
-            padding: 3px 6px;
-            gap: 4px;
-            transition: all 0.2s ease;
-            position: relative;
-            cursor: pointer;
-            flex-shrink: 0;
-            min-height: 32px; /* タッチしやすいサイズ */
-        }
-
-        .tl-card.ally { border-left: 3px solid var(--accent-blue); }
-        .tl-card.enemy { border-left: 3px solid var(--accent-red); cursor: default; }
-        .tl-card.active { 
-            border-color: var(--accent-gold); 
-            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
-            transform: scale(1.05);
-        }
-        .tl-card.done::after {
-            content: "✓";
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background: var(--accent-green);
-            color: white;
-            font-size: 8px;
-            border-radius: 50%;
-            width: 12px;
-            height: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .tl-card .spd {
-            font-size: 8px;
-            color: var(--text-muted);
-            background: rgba(255, 255, 255, 0.08);
-            padding: 1px 3px;
-            border-radius: 2px;
-        }
-
+        /* メインバトルフィールド (background.png対応) */
         #battle-field {
             flex-grow: 1;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 15px;
+            padding: 10px 20px;
             position: relative;
-            background-image: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.45)), url('./background.png');
+            background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url('background.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
             overflow: hidden;
         }
 
         .scenery-layer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
             z-index: 1;
         }
-
         .particle {
             position: absolute;
-            background: #38bdf8;
+            background: #ffffff;
             border-radius: 50%;
-            animation: floatUp 4s infinite linear;
-            opacity: 0;
+            animation: twinkle 3s infinite alternate;
+            opacity: 0.3;
+        }
+        @keyframes twinkle {
+            0% { transform: scale(0.8); opacity: 0.2; }
+            100% { transform: scale(1.2); opacity: 0.8; }
         }
 
-        @keyframes floatUp {
-            0% { transform: translateY(180px) scale(0.4); opacity: 0; }
-            30% { opacity: 0.6; }
-            70% { opacity: 0.6; }
-            100% { transform: translateY(-30px) scale(1.2); opacity: 0; }
-        }
-
-        /* ユニットグループ */
         .unit-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             z-index: 5;
-            width: 28%;
-            max-width: 220px;
+            width: 32%;
+            max-width: 230px;
         }
 
-        /* ユニットカード本体 */
+        /* ユニットカード (横幅スリム化・HP/MPのみ) */
         .unit-card {
-            width: 100%;
-            background: rgba(12, 18, 30, 0.94);
-            border: 1px solid var(--panel-border);
-            border-radius: 6px;
-            padding: 5px 6px;
-            position: relative;
-            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            backdrop-filter: blur(4px);
-            min-height: 48px; /* タッチミスを軽減する最小高さ */
-        }
-
-        .unit-card.action-forward-ally {
-            transform: translateX(20px) scale(1.05);
-            border-color: var(--accent-gold);
-            box-shadow: 0 0 22px rgba(255, 204, 0, 0.8);
-            z-index: 30;
-        }
-
-        .unit-card.action-forward-enemy {
-            transform: translateX(-20px) scale(1.05);
-            border-color: var(--accent-red);
-            box-shadow: 0 0 22px rgba(255, 51, 102, 0.8);
-            z-index: 30;
-        }
-
-        @keyframes damageShake {
-            0% { transform: translate(0, 0); }
-            20% { transform: translate(-6px, 2px); }
-            40% { transform: translate(6px, -2px); }
-            60% { transform: translate(-4px, -1px); }
-            80% { transform: translate(4px, 1px); }
-            100% { transform: translate(0, 0); }
-        }
-
-        .unit-card.damage-shake {
-            animation: damageShake 0.4s ease-in-out;
-            border-color: #ff3366 !important;
-            background-color: rgba(127, 29, 29, 0.88) !important;
-        }
-
-        .portrait-frame {
-            width: 36px;
-            height: 36px;
-            flex-shrink: 0;
-            background-color: #0f172a;
-            border: 1px solid #334155;
+            background: var(--panel-bg);
+            border: 2px solid #334155;
             border-radius: 4px;
+            padding: 6px 8px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.15s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        .unit-card:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .unit-card.active-turn {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 12px rgba(251, 191, 36, 0.5);
+            transform: scale(1.02);
+        }
+
+        .unit-card.selected-target {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 12px rgba(244, 63, 94, 0.6);
+            animation: pulseTarget 1s infinite alternate;
+        }
+
+        @keyframes pulseTarget {
+            0% { border-color: var(--accent-red); }
+            100% { border-color: #ffffff; }
+        }
+
+        .unit-card.dead {
+            opacity: 0.25;
+            filter: grayscale(1);
+            pointer-events: none;
+        }
+
+        /* 画像フレーム (1000x1000対応) */
+        .portrait-frame {
+            width: 42px;
+            height: 42px;
+            background: #020617;
+            border: 2px solid #1e293b;
+            border-radius: 3px;
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-shrink: 0;
         }
 
         .portrait-img {
@@ -282,184 +182,139 @@
             height: 100%;
             object-fit: cover;
             object-position: center 20%;
-            transition: transform 0.3s ease;
         }
 
-        .unit-info-right {
+        .unit-info {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
             min-width: 0;
         }
 
-        .unit-card.selected-target {
-            border-color: var(--accent-red);
-            box-shadow: 0 0 14px rgba(255, 51, 102, 0.7);
-        }
-
-        .unit-card.active-input {
-            border-color: var(--accent-gold);
-            box-shadow: 0 0 14px rgba(255, 204, 0, 0.7);
-        }
-
-        .unit-card.dead {
-            opacity: 0.3;
-            filter: grayscale(1);
-            pointer-events: none;
-        }
-
-        .unit-header {
+        .unit-name-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-size: 11px;
+            font-weight: bold;
         }
 
-        .unit-name { 
-            font-weight: bold; 
-            font-size: 10px; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-        }
-
-        .unit-spd {
+        .role-badge {
             font-size: 8px;
-            color: var(--accent-blue);
-            background: rgba(0, 210, 255, 0.1);
-            padding: 1px 3px;
+            padding: 1px 4px;
             border-radius: 2px;
-            white-space: nowrap;
+            color: #fff;
         }
+        .role-sword { background: #e11d48; } /* 剣兵 */
+        .role-spear { background: #2563eb; } /* 槍兵 */
+        .role-bow { background: #16a34a; }   /* 弓兵 */
 
-        .bar-container {
-            height: 3px;
-            background: rgba(255, 255, 255, 0.1);
+        .bar-wrap {
+            height: 5px;
+            background: #020617;
+            border: 1px solid #1e293b;
             border-radius: 2px;
             overflow: hidden;
         }
-
         .bar-fill {
             height: 100%;
             transition: width 0.3s ease;
         }
-        .hp-fill { background: linear-gradient(90deg, #10b981, #059669); }
-        .sp-fill { background: linear-gradient(90deg, #3b82f6, #1d4ed8); }
+        .hp-bar { background: var(--accent-green); }
+        .mp-bar { background: var(--accent-blue); }
 
-        .stat-row {
-            font-size: 8px;
+        .stat-text {
+            font-size: 9px;
             color: var(--text-muted);
             display: flex;
             justify-content: space-between;
-            align-items: center;
         }
 
-        .sub-stat-row {
-            font-size: 7px;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            padding-top: 1px;
-        }
-
-        .intention-box {
+        /* メッセージログオーバーレイ (ドラクエ風ウィンドウ) */
+        #battle-log-overlay {
             position: absolute;
-            top: -18px;
-            left: 0;
-            background: rgba(255, 51, 102, 0.9);
-            border: 1px solid var(--accent-red);
-            border-radius: 3px;
-            padding: 1px 4px;
-            font-size: 7px;
-            color: #ffffff;
-            font-weight: bold;
-            display: flex;
-            gap: 3px;
-            align-items: center;
-            white-space: nowrap;
-            z-index: 10;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-        }
-
-        #log-overlay {
-            position: absolute;
-            top: 12px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             width: 85%;
-            max-width: 420px;
-            background: rgba(5, 8, 15, 0.92);
-            border: 1px solid var(--accent-gold);
-            border-radius: 6px;
-            padding: 8px;
+            max-width: 480px;
+            background: rgba(3, 7, 18, 0.95);
+            border: 2px solid var(--accent-gold);
+            border-radius: 4px;
+            padding: 8px 12px;
             text-align: center;
             font-size: 11px;
             color: var(--accent-gold);
-            z-index: 20;
+            z-index: 25;
             display: none;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
         }
 
-        #control-panel {
-            min-height: 110px;
-            background: rgba(10, 15, 25, 0.95);
-            border-top: 1px solid var(--panel-border);
+        /* 下部コマンドウィンドウ (ドラクエ風) */
+        #command-panel {
+            height: 125px;
+            background: #050b14;
+            border-top: 3px solid #1e293b;
             display: flex;
-            padding: 8px 12px;
+            padding: 10px;
             gap: 10px;
             z-index: 20;
             flex-shrink: 0;
         }
 
-        .panel-section {
+        .panel-box {
+            background: #090e1a;
+            border: 2px solid #2a3a5e;
+            border-radius: 4px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
 
-        .info-section {
-            width: 150px;
+        /* 左側：詳細ステータス・三すくみ相性表示 */
+        .status-box {
+            width: 220px;
             flex-shrink: 0;
-            border-right: 1px solid var(--panel-border);
-            padding-right: 8px;
+            font-size: 10px;
+            gap: 3px;
+        }
+        .status-box .title {
+            color: var(--accent-blue);
+            font-weight: bold;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 2px;
+            margin-bottom: 2px;
         }
 
-        .command-section {
+        /* 右側：コマンド選択 */
+        .action-box {
             flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            justify-content: center;
-        }
-
-        .btn-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 6px;
         }
 
         .cmd-btn {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid var(--panel-border);
+            background: #0f172a;
+            border: 2px solid #334155;
             color: var(--text-main);
-            padding: 6px 2px;
             border-radius: 4px;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s ease;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 2px;
-            min-height: 42px; /* スマホでの誤タップ防止・押しやすさ向上 */
+            justify-content: space-between;
+            padding: 0 10px;
+            transition: all 0.1s ease;
         }
 
         .cmd-btn:hover:not(:disabled) {
-            background: rgba(0, 210, 255, 0.2);
+            background: #1e293b;
             border-color: var(--accent-blue);
-            transform: translateY(-2px);
+            color: var(--accent-blue);
         }
 
         .cmd-btn:disabled {
@@ -467,50 +322,26 @@
             cursor: not-allowed;
         }
 
-        .cmd-btn .cost {
-            font-size: 8px;
+        .cmd-btn span.mp {
+            font-size: 9px;
             color: var(--accent-blue);
         }
 
-        .nav-grid {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .action-btn {
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            min-height: 36px;
-        }
-
-        .btn-exec { background: linear-gradient(90deg, #00d2ff, #0077ff); color: white; }
-        .btn-exec:disabled { background: #334155; opacity: 0.5; cursor: not-allowed; }
-
-        /* スマホ向けメディアクエリの微調整 */
         @media (max-width: 600px) {
-            #control-panel {
+            #command-panel {
                 flex-direction: column;
-                gap: 6px;
-                min-height: auto;
-                padding: 6px 8px;
+                height: auto;
             }
-            .info-section {
+            .status-box {
                 width: 100%;
-                border-right: none;
-                border-bottom: 1px solid var(--panel-border);
-                padding-bottom: 4px;
-                padding-right: 0;
+                height: 48px;
                 flex-direction: row;
                 justify-content: space-between;
                 align-items: center;
+                padding: 4px 8px;
             }
-            .unit-group {
-                width: 32%;
+            .action-box {
+                height: 70px;
             }
         }
     </style>
@@ -518,50 +349,45 @@
 <body onload="initGame()">
 
 <div id="game-container">
-    <div id="timeline-bar">
-        <div class="stage-title-badge">⚔️ コモン砦攻城戦1-1</div>
-        <div class="tl-title">TIMELINE</div>
-        <div class="tl-list" id="tl-list"></div>
+    <!-- 上部ステータスバー -->
+    <div id="top-bar">
+        <span id="stage-info">🏰 コモン砦攻城戦 1-1 (三すくみ: 剣>弓>槍>剣)</span>
+        <span id="turn-guide" style="color: var(--accent-blue);">司令を選択してください</span>
     </div>
 
+    <!-- バトルフィールド -->
     <div id="battle-field">
-        <div class="scenery-layer">
-            <div id="particle-container"></div>
-        </div>
+        <div class="scenery-layer" id="stars-container"></div>
+        <div id="battle-log-overlay"></div>
 
-        <div id="log-overlay"></div>
-
+        <!-- 敵グループ -->
         <div class="unit-group" id="enemy-group"></div>
+
+        <!-- 味方グループ -->
         <div class="unit-group" id="ally-group"></div>
     </div>
 
-    <div id="control-panel">
-        <div class="panel-section info-section" id="active-unit-info">
-            <div style="font-size:11px; color:var(--text-muted)">計画フェーズ</div>
-            <div style="font-size:15px; font-weight:bold; color:var(--accent-blue)" id="info-name">指示選択中...</div>
-            <div style="margin-top:6px; font-size:11px;" id="info-status">--</div>
+    <!-- 下部ドラクエ風コマンドパネル -->
+    <div id="command-panel">
+        <div class="panel-box status-box" id="left-status-box">
+            <div class="title" id="status-ch-name">アリス (剣兵)</div>
+            <div id="status-ch-job">兵種: 剣兵 (相性: 弓に強/槍に弱)</div>
+            <div id="status-ch-detail">HP・MPのみ表示中。キャラ選択で詳細表示</div>
         </div>
 
-        <div class="panel-section command-section">
-            <div class="btn-grid" id="command-buttons">
-                <button class="cmd-btn" id="btn-atk" onclick="selectAction('attack')">
-                    通常攻撃 <span class="cost">SP +10</span>
-                </button>
-                <button class="cmd-btn" id="btn-skill1" onclick="selectAction('skill1')">
-                    強撃 <span class="cost">SP -15</span>
-                </button>
-                <button class="cmd-btn" id="btn-skill2" onclick="selectAction('skill2')">
-                    加速の陣 <span class="cost">SP -20</span>
-                </button>
-                <button class="cmd-btn" id="btn-def" onclick="selectAction('defend')">
-                    防御 <span class="cost">軽減 50%</span>
-                </button>
-            </div>
-
-            <div class="nav-grid">
-                <div style="font-size:11px; color:var(--text-muted);" id="target-hint">🎯 攻撃ターゲットを選択できます</div>
-                <button class="action-btn btn-exec" id="btn-execute" onclick="startExecution()" disabled>フェーズ実行 (確定) ▶</button>
-            </div>
+        <div class="panel-box action-box">
+            <button class="cmd-btn" id="btn-atk" onclick="selectCommand('attack')">
+                <span>⚔️ たたかう</span>
+            </button>
+            <button class="cmd-btn" id="btn-skill1" onclick="selectCommand('skill1')">
+                <span>🔥 ひっさつ</span> <span class="mp">MP 5</span>
+            </button>
+            <button class="cmd-btn" id="btn-skill2" onclick="selectCommand('skill2')">
+                <span>✨ ヒール</span> <span class="mp">MP 6</span>
+            </button>
+            <button class="cmd-btn" id="btn-def" onclick="selectCommand('defend')">
+                <span>🛡️ ぼうぎょ</span>
+            </button>
         </div>
     </div>
 </div>
@@ -575,369 +401,305 @@
         img.src = SVG_FALLBACK;
     }
 
-    function initParticles() {
-        const container = document.getElementById('particle-container');
-        if (!container) return;
-        container.innerHTML = '';
-        for (let i = 0; i < 15; i++) {
-            const p = document.createElement('div');
-            p.className = 'particle';
-            p.style.left = `${Math.random() * 100}%`;
-            p.style.bottom = `${Math.random() * 40}px`;
-            p.style.width = `${Math.random() * 3 + 2}px`;
-            p.style.height = p.style.width;
-            p.style.animationDuration = `${Math.random() * 3 + 3}s`;
-            p.style.animationDelay = `${Math.random() * 4}s`;
-            container.appendChild(p);
-        }
+    /* 
+      三すくみルール:
+      - 剣 (sword) は 弓 (bow) に強く、槍 (spear) に弱い
+      - 槍 (spear) は 剣 (sword) に強く、弓 (bow) に弱い
+      - 弓 (bow) は 槍 (spear) に強く、剣 (sword) に弱い
+    */
+    function getAdvantageMultiplier(attackerRole, defenderRole) {
+        if (attackerRole === 'sword' && defenderRole === 'bow') return { mult: 1.3, text: '【相性有利！】' };
+        if (attackerRole === 'sword' && defenderRole === 'spear') return { mult: 0.75, text: '【相性不利…】' };
+        
+        if (attackerRole === 'spear' && defenderRole === 'sword') return { mult: 1.3, text: '【相性有利！】' };
+        if (attackerRole === 'spear' && defenderRole === 'bow') return { mult: 0.75, text: '【相性不利…】' };
+        
+        if (attackerRole === 'bow' && defenderRole === 'spear') return { mult: 1.3, text: '【相性有利！】' };
+        if (attackerRole === 'bow' && defenderRole === 'sword') return { mult: 0.75, text: '【相性不利…】' };
+
+        return { mult: 1.0, text: '' };
     }
 
     const state = {
         turn: 1,
-        phase: 'PLANNING',
-        activeAllyId: 'a1',
+        phase: 'READY',
+        queueIndex: 0,
+        activeUnitId: null,
         selectedTargetId: null,
         units: [
-            { id: 'a1', name: 'アリス', isAlly: true, hp: 100, maxHp: 100, sp: 30, maxSp: 50, speed: 120, buffs: [], imgUrl: './ally1.png' },
-            { id: 'a2', name: 'ベリル', isAlly: true, hp: 120, maxHp: 120, sp: 20, maxSp: 50, speed: 95, buffs: [], imgUrl: './ally2.png' },
-            { id: 'a3', name: 'キャロル', isAlly: true, hp: 90, maxHp: 90, sp: 40, maxSp: 50, speed: 105, buffs: [], imgUrl: './ally3.png' },
-            { id: 'e1', name: '槍騎士A', isAlly: false, hp: 80, maxHp: 80, sp: 0, maxSp: 0, speed: 110, buffs: [], imgUrl: './enemy1.png' },
-            { id: 'e2', name: '剣士長B', isAlly: false, hp: 160, maxHp: 160, sp: 0, maxSp: 0, speed: 85, buffs: [], imgUrl: './enemy2.png' }
-        ],
-        timeline: [],
-        plannedActions: {},
-        enemyIntentions: {}
+            { id: 'a1', name: 'アリス', isAlly: true, role: 'sword', roleName: '剣兵', imgUrl: 'ally1.png', hp: 110, maxHp: 110, mp: 20, maxMp: 20, atk: 28, def: 18, speed: 105, isDefending: false },
+            { id: 'a2', name: 'ベリル', isAlly: true, role: 'bow', roleName: '弓兵', imgUrl: 'ally2.png', hp: 75, maxHp: 75, mp: 45, maxMp: 45, atk: 25, def: 10, speed: 120, isDefending: false },
+            { id: 'a3', name: 'ソフィア', isAlly: true, role: 'spear', roleName: '槍兵', imgUrl: 'ally3.png', hp: 85, maxHp: 85, mp: 35, maxMp: 35, atk: 26, def: 14, speed: 95, isDefending: false },
+            { id: 'e1', name: '槍騎士A', isAlly: false, role: 'spear', roleName: '槍兵', imgUrl: 'enemy1.png', hp: 90, maxHp: 90, mp: 0, maxMp: 0, atk: 24, def: 12, speed: 110, isDefending: false },
+            { id: 'e2', name: '剣士長B', isAlly: false, role: 'sword', roleName: '剣兵', imgUrl: 'enemy2.png', hp: 150, maxHp: 150, mp: 0, maxMp: 0, atk: 30, def: 15, speed: 85, isDefending: false }
+        ]
     };
 
-    function getEffectiveSpeed(unit) {
-        let spd = unit.speed;
-        unit.buffs.forEach(b => {
-            if (b.type === 'SpeedUp') spd += b.value;
-            if (b.type === 'SpeedDown') spd -= b.value;
-        });
-        return Math.max(1, spd);
-    }
-
-    function recalculateTimeline() {
-        state.timeline = [...state.units]
-            .filter(u => u.hp > 0)
-            .sort((a, b) => getEffectiveSpeed(b) - getEffectiveSpeed(a))
-            .map(u => u.id);
-    }
-
     function initGame() {
-        initParticles();
+        initStars();
         startNewTurn();
     }
 
+    function initStars() {
+        const c = document.getElementById('stars-container');
+        if (!c) return;
+        c.innerHTML = '';
+        for (let i = 0; i < 15; i++) {
+            const s = document.createElement('div');
+            s.className = 'particle';
+            s.style.left = `${Math.random() * 100}%`;
+            s.style.top = `${Math.random() * 100}%`;
+            s.style.width = `${Math.random() * 2 + 1}px`;
+            s.style.height = s.style.width;
+            s.style.animationDuration = `${Math.random() * 2 + 1}s`;
+            c.appendChild(s);
+        }
+    }
+
     function startNewTurn() {
-        state.phase = 'PLANNING';
-        state.plannedActions = {};
-        recalculateTimeline();
-
-        const aliveAllies = state.units.filter(u => u.isAlly && u.hp > 0);
-        if (aliveAllies.length > 0 && !aliveAllies.some(u => u.id === state.activeAllyId)) {
-            state.activeAllyId = aliveAllies[0].id;
-        }
-
-        generateEnemyIntentions();
-
-        const firstAliveEnemy = state.units.find(u => !u.isAlly && u.hp > 0);
-        state.selectedTargetId = firstAliveEnemy ? firstAliveEnemy.id : null;
-
-        render();
-    }
-
-    function generateEnemyIntentions() {
-        state.enemyIntentions = {};
-        const aliveAllies = state.units.filter(u => u.isAlly && u.hp > 0);
+        state.phase = 'READY';
+        const aliveUnits = state.units.filter(u => u.hp > 0);
         
-        state.units.filter(u => !u.isAlly && u.hp > 0).forEach(enemy => {
-            if (aliveAllies.length === 0) return;
-            const randomTarget = aliveAllies[Math.floor(Math.random() * aliveAllies.length)];
-            const isSpecial = Math.random() > 0.5;
+        state.actionQueue = aliveUnits.sort((a, b) => {
+            const spA = a.speed + Math.floor(Math.random() * 15);
+            const spB = b.speed + Math.floor(Math.random() * 15);
+            return spB - spA;
+        }).map(u => u.id);
+
+        state.queueIndex = 0;
+        processNextInQueue();
+    }
+
+    function processNextInQueue() {
+        if (checkWinLose()) return;
+
+        if (state.queueIndex >= state.actionQueue.length) {
+            state.turn++;
+            state.units.forEach(u => u.isDefending = false);
+            startNewTurn();
+            return;
+        }
+
+        const currentId = state.actionQueue[state.queueIndex];
+        const unit = state.units.find(u => u.id === currentId);
+
+        if (!unit || unit.hp <= 0) {
+            state.queueIndex++;
+            processNextInQueue();
+            return;
+        }
+
+        state.activeUnitId = unit.id;
+
+        if (unit.isAlly) {
+            state.phase = 'SELECTING';
+            const firstEnemy = state.units.find(u => !u.isAlly && u.hp > 0);
+            state.selectedTargetId = firstEnemy ? firstEnemy.id : null;
             
-            state.enemyIntentions[enemy.id] = {
-                targetId: randomTarget.id,
-                actionName: isSpecial ? '強撃' : '通常攻撃',
-                estimatedDamage: isSpecial ? 25 : 12
-            };
-        });
-    }
-
-    function setActiveAlly(allyId) {
-        if (state.phase !== 'PLANNING') return;
-        const unit = state.units.find(u => u.id === allyId);
-        if (unit && unit.isAlly && unit.hp > 0) {
-            state.activeAllyId = allyId;
+            updateLeftStatus(unit);
             render();
-        }
-    }
-
-    function selectAction(actionType) {
-        const activeAlly = state.units.find(u => u.id === state.activeAllyId);
-        if (!activeAlly || state.phase !== 'PLANNING') return;
-
-        if (actionType === 'skill1' && activeAlly.sp < 15) return;
-        if (actionType === 'skill2' && activeAlly.sp < 20) return;
-
-        state.plannedActions[activeAlly.id] = {
-            action: actionType,
-            targetId: (actionType === 'skill2' || actionType === 'defend') ? activeAlly.id : state.selectedTargetId
-        };
-
-        const aliveAllies = state.units.filter(u => u.isAlly && u.hp > 0);
-        const unassignedAlly = aliveAllies.find(u => !state.plannedActions[u.id]);
-        if (unassignedAlly) {
-            state.activeAllyId = unassignedAlly.id;
-        }
-
-        render();
-    }
-
-    function setTarget(enemyId) {
-        if (state.phase !== 'PLANNING') return;
-        const enemy = state.units.find(u => !u.isAlly && u.id === enemyId);
-        if (enemy && enemy.hp > 0) {
-            state.selectedTargetId = enemyId;
+            document.getElementById('turn-guide').innerText = `${unit.name} のこうどう！`;
+        } else {
+            state.phase = 'EXECUTING';
             render();
+            setTimeout(() => {
+                executeEnemyAction(unit);
+            }, 800);
         }
     }
 
-    async function startExecution() {
-        state.phase = 'EXECUTING';
-        render();
+    function inspectUnit(unitId) {
+        const u = state.units.find(item => item.id === unitId);
+        if (!u) return;
 
-        const overlay = document.getElementById('log-overlay');
-        overlay.style.display = 'block';
-        recalculateTimeline();
+        updateLeftStatus(u);
 
-        for (const unitId of state.timeline) {
-            const actor = state.units.find(u => u.id === unitId);
-            if (!actor || actor.hp <= 0) continue;
-
-            setUnitMoving(actor.id, true, actor.isAlly);
-            await new Promise(r => setTimeout(r, 350));
-
-            if (actor.isAlly) {
-                const plan = state.plannedActions[actor.id];
-                if (!plan) {
-                    setUnitMoving(actor.id, false, actor.isAlly);
-                    continue;
-                }
-
-                let target = state.units.find(u => u.id === plan.targetId);
-                if (!target || target.hp <= 0) {
-                    target = state.units.find(u => !u.isAlly && u.hp > 0);
-                }
-
-                await executeAllyAction(actor, plan.action, target, overlay);
-                if (target) playDamageAnimation(target.id);
-            } else {
-                const intention = state.enemyIntentions[actor.id];
-                if (!intention) {
-                    setUnitMoving(actor.id, false, actor.isAlly);
-                    continue;
-                }
-
-                let target = state.units.find(u => u.id === intention.targetId);
-                if (!target || target.hp <= 0) {
-                    target = state.units.find(u => u.isAlly && u.hp > 0);
-                }
-
-                await executeEnemyAction(actor, intention, target, overlay);
-                if (target) playDamageAnimation(target.id);
+        if (state.phase === 'SELECTING') {
+            if (!u.isAlly && u.hp > 0) {
+                state.selectedTargetId = u.id;
+                render();
+            } else if (u.isAlly && u.hp > 0) {
+                state.activeUnitId = u.id;
+                updateLeftStatus(u);
+                render();
             }
+        }
+    }
 
-            await new Promise(r => setTimeout(r, 600));
-            setUnitMoving(actor.id, false, actor.isAlly);
+    function updateLeftStatus(u) {
+        document.getElementById('status-ch-name').innerText = `${u.name} (${u.roleName})`;
+        document.getElementById('status-ch-job').innerText = `攻:${u.atk} / 防:${u.def} / 速:${u.speed}`;
+        document.getElementById('status-ch-detail').innerText = `HP:${u.hp}/${u.maxHp} | MP:${u.mp}/${u.maxMp} ${u.isDefending ? '[防御中]' : ''}`;
+    }
 
-            recalculateTimeline();
-            render();
-            await new Promise(r => setTimeout(r, 500));
+    function selectCommand(type) {
+        if (state.phase !== 'SELECTING') return;
+        const activeAlly = state.units.find(u => u.id === state.activeUnitId);
+        if (!activeAlly) return;
+
+        let target = state.units.find(u => u.id === state.selectedTargetId);
+        if (!target || target.hp <= 0) {
+            target = state.units.find(u => !u.isAlly && u.hp > 0);
         }
 
+        if (type === 'skill1' && activeAlly.mp < 5) {
+            showLog("MPが足りない！");
+            return;
+        }
+        if (type === 'skill2' && activeAlly.mp < 6) {
+            showLog("MPが足りない！");
+            return;
+        }
+
+        state.phase = 'EXECUTING';
+        executeAllyAction(activeAlly, type, target);
+    }
+
+    async function executeAllyAction(actor, action, target) {
+        const overlay = document.getElementById('battle-log-overlay');
+        overlay.style.display = 'block';
+
+        const adv = target ? getAdvantageMultiplier(actor.role, target.role) : { mult: 1.0, text: '' };
+
+        if (action === 'attack') {
+            let baseDmg = Math.max(5, actor.atk - Math.floor(target.def / 2) + Math.floor(Math.random() * 6) - 3);
+            let dmg = Math.floor(baseDmg * adv.mult);
+            target.hp = Math.max(0, target.hp - dmg);
+            overlay.innerText = `${actor.name} のこうげき！ ${adv.text}\n${target.name} に ${dmg} のダメージ！`;
+        } else if (action === 'skill1') {
+            actor.mp -= 5;
+            let baseDmg = Math.max(15, (actor.atk * 1.8) - target.def + Math.floor(Math.random() * 8));
+            let dmg = Math.floor(baseDmg * adv.mult);
+            target.hp = Math.max(0, target.hp - dmg);
+            overlay.innerText = `${actor.name} のひっさつぎ！ ${adv.text}\n${target.name} に ${dmg} の大ダメージ！`;
+        } else if (action === 'skill2') {
+            actor.mp -= 6;
+            const lowestAlly = [...state.units].filter(u => u.isAlly && u.hp > 0).sort((a,b) => (a.hp/a.maxHp) - (b.hp/b.maxHp))[0];
+            const heal = 35 + Math.floor(Math.random() * 10);
+            lowestAlly.hp = Math.min(lowestAlly.maxHp, lowestAlly.hp + heal);
+            overlay.innerText = `${actor.name} は ヒールを唱えた！\n${lowestAlly.name} のHPが ${heal} 回復した！`;
+        } else if (action === 'defend') {
+            actor.isDefending = true;
+            overlay.innerText = `${actor.name} は みをまもっている。`;
+        }
+
+        render();
+        await new Promise(r => setTimeout(r, 1200));
         overlay.style.display = 'none';
 
-        state.units.forEach(u => {
-            u.buffs = u.buffs.map(b => ({ ...b, duration: b.duration - 1 })).filter(b => b.duration > 0);
-        });
+        nextTurnStep();
+    }
 
+    async function executeEnemyAction(enemy) {
+        const overlay = document.getElementById('battle-log-overlay');
+        overlay.style.display = 'block';
+
+        const aliveAllies = state.units.filter(u => u.isAlly && u.hp > 0);
+        if (aliveAllies.length === 0) return;
+        const target = aliveAllies[Math.floor(Math.random() * aliveAllies.length)];
+
+        const adv = getAdvantageMultiplier(enemy.role, target.role);
+        let baseDmg = Math.max(3, enemy.atk - Math.floor(target.def / 2) + Math.floor(Math.random() * 5));
+        let dmg = Math.floor(baseDmg * adv.mult);
+
+        if (target.isDefending) {
+            dmg = Math.floor(dmg / 2);
+        }
+        target.hp = Math.max(0, target.hp - dmg);
+
+        overlay.innerText = `${enemy.name} のこうげき！ ${adv.text}\n${target.name} に ${dmg} のダメージ！`;
+
+        render();
+        await new Promise(r => setTimeout(r, 1200));
+        overlay.style.display = 'none';
+
+        nextTurnStep();
+    }
+
+    function nextTurnStep() {
+        if (checkWinLose()) return;
+        state.queueIndex++;
+        processNextInQueue();
+    }
+
+    function checkWinLose() {
         const aliveEnemies = state.units.filter(u => !u.isAlly && u.hp > 0);
         const aliveAllies = state.units.filter(u => u.isAlly && u.hp > 0);
 
         if (aliveEnemies.length === 0) {
-            setTimeout(() => { alert("🎉 戦闘勝利！ステージクリア！"); location.reload(); }, 200);
-        } else if (aliveAllies.length === 0) {
-            setTimeout(() => { alert("💀 全滅しました..."); location.reload(); }, 200);
-        } else {
-            state.turn++;
-            startNewTurn();
+            state.phase = 'GAME_OVER';
+            const overlay = document.getElementById('battle-log-overlay');
+            overlay.style.display = 'block';
+            overlay.innerText = "🏆 まものたちを全滅させた！\n【ステージクリア】";
+            setTimeout(() => location.reload(), 3000);
+            return true;
         }
+        if (aliveAllies.length === 0) {
+            state.phase = 'GAME_OVER';
+            const overlay = document.getElementById('battle-log-overlay');
+            overlay.style.display = 'block';
+            overlay.innerText = "💀 パーティは全滅してしまった……\n【ぜんめつ】";
+            setTimeout(() => location.reload(), 3000);
+            return true;
+        }
+        return false;
     }
 
-    function setUnitMoving(unitId, isMoving, isAlly) {
-        const el = document.getElementById(`unit-card-${unitId}`);
-        if (!el) return;
-        if (isMoving) {
-            el.classList.add(isAlly ? 'action-forward-ally' : 'action-forward-enemy');
-        } else {
-            el.classList.remove('action-forward-ally', 'action-forward-enemy');
-        }
-    }
-
-    function playDamageAnimation(unitId) {
-        const el = document.getElementById(`unit-card-${unitId}`);
-        if (!el) return;
-        el.classList.add('damage-shake');
-        setTimeout(() => {
-            el.classList.remove('damage-shake');
-        }, 400);
-    }
-
-    async function executeAllyAction(actor, action, target, overlay) {
-        if (action === 'attack') {
-            const dmg = 22;
-            actor.sp = Math.min(actor.maxSp, actor.sp + 10);
-            if (target) target.hp = Math.max(0, target.hp - dmg);
-            overlay.innerText = `${actor.name} の通常攻撃！ ${target ? target.name : ''} に ${dmg} ダメージ (SP+10)`;
-        } else if (action === 'skill1') {
-            actor.sp -= 15;
-            const dmg = 42;
-            if (target) target.hp = Math.max(0, target.hp - dmg);
-            overlay.innerText = `${actor.name} のスキル【強撃】！ ${target ? target.name : ''} に ${dmg} ダメージ！`;
-        } else if (action === 'skill2') {
-            actor.sp -= 20;
-            actor.buffs.push({ name: 'SpdUP', type: 'SpeedUp', value: 30, duration: 2 });
-            overlay.innerText = `${actor.name} のスキル【加速の陣】！ 素早さ上昇！`;
-        } else if (action === 'defend') {
-            actor.buffs.push({ name: '防御', type: 'Defense', duration: 1 });
-            overlay.innerText = `${actor.name} は身構えている！`;
-        }
-    }
-
-    async function executeEnemyAction(actor, intention, target, overlay) {
-        if (!target) return;
-        let dmg = intention.estimatedDamage;
-        if (target.buffs.some(b => b.name === '防御')) {
-            dmg = Math.floor(dmg / 2);
-        }
-        target.hp = Math.max(0, target.hp - dmg);
-        overlay.innerText = `⚠️ ${actor.name} の【${intention.actionName}】！ ${target.name} に ${dmg} ダメージ！`;
+    function showLog(msg) {
+        const overlay = document.getElementById('battle-log-overlay');
+        overlay.style.display = 'block';
+        overlay.innerText = msg;
+        setTimeout(() => overlay.style.display = 'none', 1200);
     }
 
     function render() {
-        renderTimeline();
         renderUnits();
-        renderControlPanel();
-    }
-
-    function renderTimeline() {
-        const listEl = document.getElementById('tl-list');
-        listEl.innerHTML = '';
-
-        state.timeline.forEach(id => {
-            const u = state.units.find(unit => unit.id === id);
-            if (!u || u.hp <= 0) return;
-
-            const card = document.createElement('div');
-            card.className = `tl-card ${u.isAlly ? 'ally' : 'enemy'}`;
-            
-            if (state.phase === 'PLANNING' && state.activeAllyId === u.id) {
-                card.classList.add('active');
-            }
-            if (state.plannedActions[u.id]) {
-                card.classList.add('done');
-            }
-
-            if (u.isAlly && state.phase === 'PLANNING') {
-                card.onclick = () => setActiveAlly(u.id);
-            }
-
-            card.innerHTML = `
-                <span style="font-size:11px; font-weight:bold">${u.name}</span>
-                <span class="spd">${getEffectiveSpeed(u)}</span>
-            `;
-            listEl.appendChild(card);
-        });
+        renderCommandPanel();
     }
 
     function renderUnits() {
-        const enemyGrp = document.getElementById('enemy-group');
         const allyGrp = document.getElementById('ally-group');
-        enemyGrp.innerHTML = '';
+        const enemyGrp = document.getElementById('enemy-group');
         allyGrp.innerHTML = '';
+        enemyGrp.innerHTML = '';
 
         state.units.forEach(u => {
             const card = document.createElement('div');
-            card.id = `unit-card-${u.id}`;
             card.className = `unit-card ${u.hp <= 0 ? 'dead' : ''}`;
-
-            if (!u.isAlly && u.id === state.selectedTargetId) {
+            
+            if (u.id === state.activeUnitId && state.phase === 'SELECTING') {
+                card.classList.add('active-turn');
+            }
+            if (!u.isAlly && u.id === state.selectedTargetId && state.phase === 'SELECTING') {
                 card.classList.add('selected-target');
             }
-            if (state.phase === 'PLANNING' && u.isAlly && u.id === state.activeAllyId) {
-                card.classList.add('active-input');
-            }
 
-            if (state.phase === 'PLANNING') {
-                if (!u.isAlly) {
-                    card.onclick = () => setTarget(u.id);
-                } else {
-                    card.onclick = () => setActiveAlly(u.id);
-                }
-            }
+            card.onclick = () => inspectUnit(u.id);
 
             const hpPct = (u.hp / u.maxHp) * 100;
-            const spPct = u.maxSp > 0 ? (u.sp / u.maxSp) * 100 : 0;
-            const effectiveSpd = getEffectiveSpeed(u);
+            const mpPct = u.maxMp > 0 ? (u.mp / u.maxMp) * 100 : 0;
 
-            let intentionHtml = '';
-            if (!u.isAlly && u.hp > 0 && state.enemyIntentions[u.id]) {
-                const intent = state.enemyIntentions[u.id];
-                const targetUnit = state.units.find(target => target.id === intent.targetId);
-                intentionHtml = `
-                    <div class="intention-box">
-                        <span>🎯 ${targetUnit ? targetUnit.name : '?'}</span>
-                        <span>⚡ ${intent.actionName}</span>
-                    </div>
-                `;
-            }
+            let roleClass = 'role-sword';
+            if (u.role === 'spear') roleClass = 'role-spear';
+            if (u.role === 'bow') roleClass = 'role-bow';
 
-            let portraitHtml = `
+            const mpBarHtml = u.maxMp > 0 ? `
+                <div class="stat-text"><span>MP</span><span>${u.mp}/${u.maxMp}</span></div>
+                <div class="bar-wrap"><div class="bar-fill mp-bar" style="width:${mpPct}%"></div></div>
+            ` : '';
+
+            card.innerHTML = `
                 <div class="portrait-frame">
                     <img src="${u.imgUrl || ''}" class="portrait-img" alt="${u.name}" onerror="handleImageError(this)">
                 </div>
-            `;
-
-            const spBarHtml = u.maxSp > 0 ? `
-                <div class="bar-container" style="margin-top: 2px;">
-                    <div class="bar-fill sp-fill" style="width: ${spPct}%"></div>
-                </div>
-            ` : '';
-
-            const spStatHtml = u.maxSp > 0 ? `<span>SP:${u.sp}/${u.maxSp}</span>` : '';
-
-            card.innerHTML = `
-                ${intentionHtml}
-                ${portraitHtml}
-                <div class="unit-info-right">
-                    <div class="unit-header">
-                        <span class="unit-name">${u.name}</span>
-                        <span class="unit-spd">spd:${effectiveSpd}</span>
+                <div class="unit-info">
+                    <div class="unit-name-row">
+                        <span>${u.name}</span>
+                        <span class="role-badge ${roleClass}">${u.roleName}</span>
                     </div>
-                    <div class="stat-row">
-                        <span>HP:${u.hp}/${u.maxHp}</span>
-                        ${spStatHtml}
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar-fill hp-fill" style="width: ${hpPct}%"></div>
-                    </div>
-                    ${spBarHtml}
-                    <div class="sub-stat-row">
-                        <span>攻:${u.isAlly ? '25' : '20'}</span>
-                        <span>防:${u.buffs.some(b => b.name === '防御') ? '軽減' : '通常'}</span>
-                    </div>
+                    <div class="stat-text"><span>HP</span><span>${u.hp}/${u.maxHp}</span></div>
+                    <div class="bar-wrap"><div class="bar-fill hp-bar" style="width:${hpPct}%"></div></div>
+                    ${mpBarHtml}
                 </div>
             `;
 
@@ -949,28 +711,14 @@
         });
     }
 
-    function renderControlPanel() {
-        const activeAlly = state.units.find(u => u.id === state.activeAllyId);
-        const nameEl = document.getElementById('info-name');
-        const statusEl = document.getElementById('info-status');
-        const btnExec = document.getElementById('btn-execute');
+    function renderCommandPanel() {
+        const activeAlly = state.units.find(u => u.id === state.activeUnitId);
+        const isSelectable = (state.phase === 'SELECTING' && activeAlly && activeAlly.isAlly);
 
-        if (!activeAlly || state.phase !== 'PLANNING') {
-            nameEl.innerText = state.phase === 'PLANNING' ? "全員の指示完了" : "実行中...";
-            statusEl.innerText = "--";
-            btnExec.disabled = false;
-            return;
-        }
-
-        nameEl.innerText = `${activeAlly.name} の指示選択`;
-        statusEl.innerHTML = `HP: ${activeAlly.hp}/${activeAlly.maxHp} | SP: ${activeAlly.sp}/${activeAlly.maxSp}`;
-
-        const assignedCount = Object.keys(state.plannedActions).length;
-        const totalAllies = state.units.filter(u => u.isAlly && u.hp > 0).length;
-        btnExec.disabled = assignedCount < totalAllies;
-
-        document.getElementById('btn-skill1').disabled = activeAlly.sp < 15;
-        document.getElementById('btn-skill2').disabled = activeAlly.sp < 20;
+        document.getElementById('btn-atk').disabled = !isSelectable;
+        document.getElementById('btn-skill1').disabled = !isSelectable || (activeAlly && activeAlly.mp < 5);
+        document.getElementById('btn-skill2').disabled = !isSelectable || (activeAlly && activeAlly.mp < 6);
+        document.getElementById('btn-def').disabled = !isSelectable;
     }
 </script>
 </body>
